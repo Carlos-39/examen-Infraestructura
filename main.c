@@ -26,6 +26,12 @@ int main(int argc, char* argv[]) {
     }
 
     filename = argv[1];
+
+    // Se van a definir los hilos para cada region paralela que exista
+    int num_nucleos = omp_get_num_procs(); // aca se obtiene el numero de nucleos (8 en este caso)
+    int num_hilos = num_nucleos * 2; // se multiplica el número de nucleos * 2
+    omp_set_num_threads(num_hilos); // se configura el número de hilos
+
     // Cargar la imagen (no paralelizable)
     cargarImagen(imagen, width, height);
 
