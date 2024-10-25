@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <omp.h>
 
 // Funciones placeholder para la carga y guardado de imágenes
 void cargarImagen(int *imagen, int width, int height);
@@ -80,11 +81,16 @@ void guardarImagen(int *imagen, int width, int height) {
     fclose(archivo);
 }
 
-
+// Función paralelizada para aplicar el filtro
 void aplicarFiltro(int *imagen, int *imagenProcesada, int width, int height) {
     int Gx[3][3] = {{-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1}};
     int Gy[3][3] = {{-1, -2, -1}, {0, 0, 0}, {1, 2, 1}};
 
+    // Paralelizar los bucles
+    // El modificador collapse(2) se usa para que ambos bucles (x e y) se paralelicen de manera conjunta.
+    // El modificador schedule(dynamic) se usa para distribuir de forma dinámica las iteraciones del bucle entre los hilos.
+        // Esto se hace por si algunas áreas de la imagen toman más tiempo en procesarse que otras.
+    #pragma omp parallel for collapse(2) schedule(dynamic)
     for (int y = 1; y < height - 1; y++) {
         for (int x = 1; x < width - 1; x++) {
             int sumX = 0;
@@ -105,9 +111,15 @@ void aplicarFiltro(int *imagen, int *imagenProcesada, int width, int height) {
     }
 }
 
-
+// Función paralelizada para calcular la suma de los píxeles
 int calcularSumaPixeles(int *imagen, int width, int height) {
     int suma = 0;
+
+    // Paralelizar la reducción con OpenMP
+    // #pragma omp parallel for reduction(+:suma)
+        // el reduction(+:suma) es una instrucción que significa que la suma de píxeles se acumula utilizando una reducción para evitar condiciones de carrera entre los hilos.
+        // schedule(static) se utiliza para dividir las iteraciones de manera equitativa (static) entre los hilos.
+    #pragma omp parallel for reduction(+:suma) schedule(static)
     for (int i = 0; i < width * height; i++) {
         suma += imagen[i];
     }
